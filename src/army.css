@@ -1,0 +1,17 @@
+/* ===== Вкладка «Армия и генералы» ===== */
+.gen { display: flex; gap: 12px; align-items: center; }
+.gen.owned { border-color: var(--blue-2); }
+.gen-av { flex: none; width: 46px; height: 46px; font-size: 16px; background: linear-gradient(135deg, #6b7280, #374151); }
+.gen.owned .gen-av { background: linear-gradient(135deg, #d4a017, #8a6508); }
+.gen-body { flex: 1; min-width: 0; }
+.gen-act { flex: none; width: 210px; text-align: left; }
+.gen-act .btn.primary { width: 100%; text-align: center; }
+.gstars { color: var(--amber); letter-spacing: 1px; }
+.coupbox { border: 1px solid rgba(255, 90, 78, .45); background: rgba(255, 90, 78, .06); border-radius: 8px; padding: 12px 14px; }
+.prep { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.prep.done { opacity: .75; border-color: var(--good); }
+.btn.danger.big { padding: 12px 22px; font-weight: 700; }
+@media (max-width: 760px) {
+  .gen { flex-wrap: wrap; }
+  .gen-act { width: 100%; }
+}

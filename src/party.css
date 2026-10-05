@@ -38,3 +38,30 @@
   .screen-enter .ptree ul > li:nth-child(3) { animation-delay: .12s }
   .screen-enter .ptree ul > li:nth-child(n+4) { animation-delay: .18s }
 }
+
+/* ===== Бюджет, позиция «народ — элиты», охрана, лоббисты ===== */
+.bud { padding: 2px 0; max-width: 560px; }
+.bud-row { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-bottom: 1px dashed var(--line-2); font-size: 14px; }
+.bud-row b { font-family: var(--f-mono, monospace); font-weight: 600; white-space: nowrap; }
+.bud-row.total { border-bottom: 0; border-top: 2px solid var(--line-2); margin-top: 3px; padding-top: 7px; font-size: 15px; font-weight: 600; }
+.up   { color: var(--good); }
+.down { color: var(--bad); }
+
+.sidemeter { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; font-size: 11.5px; letter-spacing: .08em; color: var(--muted); }
+.sm-bar { position: relative; flex: 1; height: 12px; border-radius: 6px;
+          background: linear-gradient(90deg, #f4b740 0%, var(--panel-3) 50%, #3d84ff 100%); border: 1px solid var(--line-2); }
+.sm-bar::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line-2); }
+.sm-bar i { position: absolute; top: -5px; width: 18px; height: 22px; margin-left: -9px; border-radius: 5px;
+            background: #fff; border: 2px solid var(--blue-2); box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+
+.secgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.secgrid .btn { text-align: left; }
+.secgrid .btn.on { border-color: var(--blue-2); background: rgba(61,132,255,.16); opacity: 1; }
+
+.lob { display: flex; gap: 14px; align-items: stretch; justify-content: space-between; flex-wrap: wrap; }
+.lob-body { flex: 1 1 320px; min-width: 0; }
+.lob-act { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; flex: 0 1 auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sm-bar i { transition: left .5s var(--ease); }
+}
