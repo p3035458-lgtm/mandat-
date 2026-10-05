@@ -1,0 +1,87 @@
+/* ===== Анимации Mandate =====
+   Все эффекты включаются только если пользователь не просил «меньше движения». */
+@media (prefers-reduced-motion: no-preference) {
+  :root { --ease: cubic-bezier(.2,.7,.2,1); }
+
+  @keyframes a-rise  { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+  @keyframes a-fade  { from { opacity:0 } to { opacity:1 } }
+  @keyframes a-pop   { from { opacity:0; transform:translateY(18px) scale(.96) } to { opacity:1; transform:none } }
+  @keyframes a-grow  { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+  @keyframes a-toast { from { opacity:0; transform:translate(-50%,16px) } to { opacity:1; transform:translate(-50%,0) } }
+  @keyframes a-ken   { from { transform:scale(1.03) } to { transform:scale(1.13) translate(-1.5%,-1%) } }
+  @keyframes a-march { to { stroke-dashoffset:-14 } }
+  @keyframes a-shake {
+    0%,100% { transform:translate(0,0) }
+    12% { transform:translate(-7px,3px) } 25% { transform:translate(6px,-4px) }
+    38% { transform:translate(-5px,-2px) } 52% { transform:translate(4px,3px) }
+    66% { transform:translate(-3px,1px) } 80% { transform:translate(2px,-1px) }
+  }
+  @keyframes a-vignette { 0% { opacity:0 } 15% { opacity:1 } 100% { opacity:0 } }
+  @keyframes a-float { 0% { opacity:0; transform:translate(-50%,0) scale(.8) } 15% { opacity:1 }
+                       100% { opacity:0; transform:translate(-50%,-56px) scale(1.05) } }
+
+  /* --- вход экрана: плавное появление блоков, только при смене экрана --- */
+  .screen-enter > * { animation: a-rise .5s var(--ease) backwards; }
+  .screen-enter > *:nth-child(2) { animation-delay: .06s }
+  .screen-enter > *:nth-child(3) { animation-delay: .12s }
+  .screen-enter > *:nth-child(4) { animation-delay: .18s }
+  .screen-enter > *:nth-child(5) { animation-delay: .24s }
+  .screen-enter > *:nth-child(n+6) { animation-delay: .3s }
+  .screen-enter .sh .bar i,
+  .screen-enter .votebar > div { transform-origin: left center; animation: a-grow .8s var(--ease) .25s backwards; }
+
+  /* --- меню --- */
+  .menu-bg { animation: a-ken 26s ease-in-out infinite alternate; }
+  .screen-enter .logo { animation: a-rise .8s var(--ease) .1s backwards; }
+  .screen-enter .menu-nav .mbtn { animation: a-rise .5s var(--ease) backwards; }
+  .screen-enter .menu-nav .mbtn:nth-child(1) { animation-delay: .3s }
+  .screen-enter .menu-nav .mbtn:nth-child(2) { animation-delay: .38s }
+  .screen-enter .menu-nav .mbtn:nth-child(3) { animation-delay: .46s }
+  .screen-enter .menu-nav .mbtn:nth-child(4) { animation-delay: .54s }
+  .screen-enter .menu-nav .mbtn:nth-child(5) { animation-delay: .62s }
+
+  /* --- окна, события, тосты --- */
+  .mback { animation: a-fade .22s ease-out; }
+  .mback .modal { animation: a-pop .34s var(--ease); }
+  .ev-photo { overflow: hidden; }
+  .ev-photo img { animation: a-ken 14s ease-out forwards; }
+  .evch .evrow { animation: a-rise .38s var(--ease) backwards; }
+  .evch .evrow:nth-child(1) { animation-delay: .14s }
+  .evch .evrow:nth-child(2) { animation-delay: .2s }
+  .evch .evrow:nth-child(3) { animation-delay: .26s }
+  .evch .evrow:nth-child(4) { animation-delay: .32s }
+  .evch .evrow:nth-child(n+5) { animation-delay: .38s }
+  .mbody .outcome { animation: a-rise .4s var(--ease) .05s backwards; }
+  .toast { animation: a-toast .34s var(--ease); }
+  .ticker { animation: a-fade .6s ease-out; }
+  #nt-feed > div { animation: a-rise .45s var(--ease) backwards; }
+
+  /* --- кнопки --- */
+  .btn, .mbtn, .evrow, .tab { transition: transform .14s var(--ease), background .15s, border-color .15s, box-shadow .2s; }
+  .btn:not(:disabled):hover { transform: translateY(-1px); }
+  .btn:not(:disabled):active { transform: translateY(0) scale(.97); }
+  .btn.primary:not(:disabled):hover { box-shadow: 0 6px 18px rgba(31,111,255,.35); }
+  .mbtn:not(:disabled):hover { transform: translateX(5px); border-color: var(--blue-2); }
+  .mbtn:not(:disabled):active { transform: translateX(2px) scale(.98); }
+  .evrow:hover { transform: translateX(4px); border-color: var(--blue-2); background: var(--panel-3); }
+  .evrow:active { transform: scale(.985); }
+
+  /* --- карта --- */
+  .hot { transition: fill .2s; cursor: pointer; }
+  .hot.sel { animation: a-march 1.4s linear infinite; }
+
+  /* --- спецэффекты (создаёт src/fx.js) --- */
+  body.fx-shake #app, body.fx-shake .mback { animation: a-shake .55s linear; }
+  #fx-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; overflow: hidden; }
+  #fx-layer .fx-vig { position: absolute; inset: 0; opacity: 0; animation: a-vignette 1.1s ease-out forwards; }
+  #fx-layer .fx-vig.danger  { background: radial-gradient(ellipse at center, rgba(255,90,78,0) 40%, rgba(255,90,78,.5) 100%); }
+  #fx-layer .fx-vig.scandal { background: radial-gradient(ellipse at center, rgba(255,90,78,0) 55%, rgba(255,90,78,.28) 100%); }
+  #fx-layer .fx-vig.warn    { background: radial-gradient(ellipse at center, rgba(244,183,64,0) 50%, rgba(244,183,64,.32) 100%); }
+  #fx-layer .fx-vig.good    { background: radial-gradient(ellipse at center, rgba(61,132,255,0) 45%, rgba(143,180,255,.4) 100%); }
+  #fx-layer .fx-p { position: absolute; font-size: 22px; line-height: 1; will-change: transform, opacity; }
+  #fx-layer .fx-t { position: absolute; font-family: var(--f-display); font-weight: 800; font-size: 20px; white-space: nowrap;
+                    text-shadow: 0 2px 10px rgba(0,0,0,.7); animation: a-float 1.3s var(--ease) forwards; }
+  #fx-layer .fx-t.good { color: var(--good); }
+  #fx-layer .fx-t.bad  { color: var(--bad); }
+  #fx-layer .fx-t.warn { color: var(--amber); }
+}

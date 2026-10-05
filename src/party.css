@@ -1,0 +1,40 @@
+/* ===== Вкладка «Партия и подкуп» ===== */
+.loyalty { padding: 4px 0 2px; }
+.loy-num { font-family: var(--f-display); font-weight: 800; font-size: 34px; line-height: 1.1; }
+.loy-num small { font-size: 16px; color: var(--muted); font-weight: 600; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+        vertical-align: middle; margin-left: 6px; background: var(--panel-3); border: 1px solid var(--line-2); }
+.chip.up   { color: var(--good);  border-color: var(--good); }
+.chip.warn { color: var(--amber); border-color: var(--amber); }
+.chip.down { color: var(--bad);   border-color: var(--bad); }
+.lbar { height: 12px; border-radius: 6px; background: var(--panel-3); overflow: hidden; margin-top: 8px; }
+.lbar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--amber), #ffd677); }
+
+.ptree, .ptree ul { list-style: none; margin: 0; padding: 0; }
+.ptree ul { margin-left: 20px; padding-left: 16px; border-left: 2px solid var(--line-2); }
+.ptree li { position: relative; margin-top: 8px; }
+.ptree ul > li::before { content: ""; position: absolute; left: -16px; top: 27px; width: 14px; border-top: 2px solid var(--line-2); }
+.pt-card { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
+           background: var(--panel-2); border: 1px solid var(--line-2); }
+.pt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pt-body small { font-size: 12px; line-height: 1.3; }
+.pt-av { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+         font-family: var(--f-display); font-weight: 800; font-size: 15px; color: #fff;
+         background: linear-gradient(135deg, var(--blue-2), #3b5bdb); }
+.pt-av.empty { background: var(--panel-3); color: var(--muted); border: 1px dashed var(--line-2); font-size: 16px; }
+.pt-node.vacant > .pt-card { border-style: dashed; }
+.pt-node.locked > .pt-card { opacity: .5; }
+.pt-node.root > .pt-card { border-color: var(--blue-2); }
+.pt-hint { margin: 6px 0 0 22px; font-size: 12px; color: var(--muted); }
+.cand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cand .btn { flex: none; text-align: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .screen-enter .lbar i { transform-origin: left center; animation: a-grow .9s var(--ease) .2s backwards; }
+  .pt-card { transition: border-color .15s, transform .14s var(--ease); }
+  .pt-node.vacant > .pt-card:hover, .pt-node.filled > .pt-card:hover { border-color: var(--blue-2); transform: translateX(2px); }
+  .screen-enter .ptree li { animation: a-rise .45s var(--ease) backwards; }
+  .screen-enter .ptree ul > li:nth-child(2) { animation-delay: .06s }
+  .screen-enter .ptree ul > li:nth-child(3) { animation-delay: .12s }
+  .screen-enter .ptree ul > li:nth-child(n+4) { animation-delay: .18s }
+}
