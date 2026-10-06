@@ -1,0 +1,31 @@
+/* ===== Профили людей, кандидаты, командировки ===== */
+.prof-wrap { max-height: 78vh; overflow-y: auto; }
+.prof { display: flex; gap: 16px; align-items: flex-start; }
+.prof-ph { flex: none; }
+.prof-img { width: 112px; height: 140px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line-2); display: block; }
+.prof-b { flex: 1; min-width: 0; }
+.prof-name { font-family: var(--f-display); font-weight: 800; font-size: 22px; line-height: 1.15; }
+.prof-q { margin-top: 8px; font-style: italic; color: #c9d6f2; font-size: 14px; }
+.prof-sec { margin-top: 14px; }
+.prof-sec h4, .prof-cols h4 { margin: 0 0 4px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.prof-sec p { margin: 0 0 6px; font-size: 14px; line-height: 1.45; }
+.prof-car { list-style: none; margin: 4px 0 0; padding: 0 0 0 12px; border-left: 2px solid var(--line-2); display: grid; gap: 4px; font-size: 13.5px; }
+.prof-car li span { display: inline-block; min-width: 92px; color: var(--muted); font-family: var(--f-mono, monospace); font-size: 12px; }
+.prof-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.prof-cols ul { margin: 0; padding-left: 16px; font-size: 13.5px; display: grid; gap: 3px; }
+.prof-rate { margin-top: 12px; font-size: 14px; }
+.cand { display: flex; align-items: center; gap: 12px; }
+.cand-img { width: 56px; height: 68px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line-2); display: block; }
+.cand-b { flex: 1; min-width: 0; }
+.cand-act { flex: none; display: grid; gap: 6px; }
+.pt-ph { overflow: hidden; padding: 0; background: var(--panel-3); }
+.pt-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pt-btns { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.hire-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.cbar { display: inline-block; width: 54px; height: 6px; border-radius: 3px; background: var(--panel-3); vertical-align: middle; overflow: hidden; margin-right: 4px; }
+.cbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--amber), var(--bad)); }
+@media (max-width: 640px) {
+  .prof { flex-direction: column; }
+  .prof-cols { grid-template-columns: 1fr; }
+  .cand { flex-wrap: wrap; }
+}

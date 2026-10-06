@@ -292,3 +292,62 @@ console.log('события за 60 симулированных кампани�
     for(let k=0;k<3;k++){ const snap=JSON.stringify(t.getS().lobby); const d=t.CR.lobbydebt.build(); const r=d.choices[k].run(); if(typeof r!=='string') throw new Error('lobbydebt'); t.getS().lobby=JSON.parse(snap); }
     console.log('долги лоббистам в президентстве: все варианты отработали'); }
 }
+
+/* ---------- профили людей, командировки, лобби по инициативе, главная ---------- */
+{
+  // 1) профили: все кандидаты на все должности и все сотрудники, детерминированность, нет «лояльности» в тексте
+  const S=fresh(); S.budget=9e6; let n=0;
+  for(const pd of t.PARTY_TREE){
+    const list=t.candsFor(pd.id); if(list.length!==3) throw new Error('кандидатов должно быть 3');
+    const ports=new Set(list.map(c=>c.port)); if(ports.size!==3) throw new Error('портреты кандидатов повторяются');
+    list.forEach((c,i)=>{ const h=t.profileHTML(c); if(!h.includes('Биография')||!h.includes('Сильные стороны')) throw new Error('профиль пустой');
+      if(/лояльн/i.test(h)) throw new Error('в профиле остались показатели лояльности'); if(h!==t.profileHTML(c)) throw new Error('профиль недетерминирован'); n++ });
+  }
+  for(const s of t.STAFF){ const p=t.staffPerson(s.id); const h=t.profileHTML(p); if(!h.includes('Биография')||h!==t.profileHTML(p)) throw new Error('профиль сотрудника '+s.id); n++ }
+  console.log('профилей сгенерировано и проверено:',n);
+  // окно выбора кандидата не показывает лояльность и амбиции цифрами
+  t.A.post('sec'); const m1=document.querySelector('#modal').innerHTML;
+  if(/Лояльность \+|амбиции|комп\./i.test(m1)) throw new Error('в списке кандидатов остались цифры лояльности');
+  if(!m1.includes('data-a="person"')||!m1.includes('data-a="appoint"')) throw new Error('нет кнопок профиля/назначения');
+  console.log('список кандидатов: кнопки «Профиль» и «Назначить» есть, цифр лояльности нет');
+  // округ кандидата: для региональных постов совпадает с регионом, везде виден в профиле и в списке
+  for(const pd of t.PARTY_TREE.filter(x=>x.id.startsWith('r_'))){ const reg=t.REG.find(r=>'r_'+r.id===pd.id).name; for(const c of t.candsFor(pd.id)){ if(!t.profileHTML(c).includes('округе «'+reg+'»')) throw new Error('округ кандидата '+pd.id+' != '+reg) } }
+  { t.A.post('r_north'); const m0=document.querySelector('#modal').innerHTML; if(!(m0.match(/от округа «Север»/g)||[]).length===3&&(m0.match(/от округа «Север»/g)||[]).length!==3) throw new Error('в списке кандидатов нет округа'); t.A.person('cand|r_north|0'); const mm=document.querySelector('#modal').innerHTML; if(!/округ(а|е) «Север»/.test(mm)) throw new Error('в профиле нет округа'); console.log('кандидат на пост главы северного отделения: все три из округа «Север», профиль открывается'); }
+  // 2) назначение и профиль назначенного
+  t.A.appoint('sec|1'); const P=t.getS().pty; if(!P.posts.sec) throw new Error('не назначен'); if(!P.posts.sec.seed||!P.posts.sec.port) throw new Error('у назначенного нет профиля');
+  t.A.person('post|sec'); const m2=document.querySelector('#modal').innerHTML; if(!m2.includes('dispatchAsk')) throw new Error('нет кнопки отправки в регион');
+  // 3) спорность регионов и командировка
+  const cs=t.REG.map((r,i)=>t.contest(i)); if(cs.some(x=>!(x>=0&&x<=100))) throw new Error('contest вне диапазона');
+  t.A.dispatchAsk('post|sec'); const m3=document.querySelector('#modal').innerHTML; if(!m3.includes('data-a="dispatch"')) throw new Error('нет списка регионов');
+  const hot=cs.indexOf(Math.max(...cs)); const b0=t.getS().budget, e0=t.getS().regions[hot].effort.player;
+  t.A.dispatch('post|sec|'+hot); const cp=t.getS().camp; if(cp.missions.length!==1) throw new Error('командировка не создана');
+  if(!(t.getS().budget<b0)) throw new Error('выезд не стоил денег');
+  const net0=t.weeklyBudget().overhead; if(!(net0>=200e3+20e3)) throw new Error('командировка не попала в расходы недели');
+  t.A.dispatch('post|sec|'+hot); if(cp.missions.length!==1) throw new Error('один человек отправлен дважды');
+  for(let w=0;w<3;w++){ t.getS().queue.length=0; cp.left=Math.max(cp.left,40); t.nextWeek(); }
+  const gain=t.getS().regions[hot].effort.player-e0; if(!(gain>2)) throw new Error('агитатор ничего не дал: '+gain);
+  if(cp.missions.length!==0) throw new Error('командировка не завершилась');
+  console.log(`командировка: регион «${t.REG[hot].name}» (спорность ${cs[hot]}), за 3 недели +${gain.toFixed(1)} к поддержке, расходы недели вернулись к ${(t.weeklyBudget().overhead/1e3)|0}k`);
+  // отзыв и запреты
+  t.A.dispatch('post|sec|'+hot); t.A.recall('post:sec'); if(t.getS().camp.missions.length) throw new Error('recall');
+  t.A.person('staff|mgr_k'); if(document.querySelector('#modal').innerHTML.includes('dispatchAsk')) throw new Error('руководителя кампании нельзя отправлять');
+  // событие срыва агитатора
+  { const d=t.EV.missiongaffe.build({name:'Тест Тестов',w:false,reg:2}); for(let k=0;k<d.choices.length;k++){ const S2=fresh(); const r=t.EV.missiongaffe.build({name:'Тест Тестов',w:true,reg:2}).choices[k].run(); if(typeof r!=='string') throw new Error('gaffe'); okNum(S2) } }
+  // 4) лоббирование по инициативе игрока
+  { const S3=fresh(); S3.budget=3e6; S3.camp.week=8; const L=t.lobby(); let got=0,tries=0;
+    for(let i=0;i<400;i++){ const S4=fresh(); S4.budget=3e6; S4.camp.week=8; S4.camp.ap=10; const L4=t.lobby(); t.A.lobbyPitch('oil'); tries++; if(L4.offers.length) got++ }
+    console.log(`предложить услуги нефтяникам: сделка завязалась в ${(got/tries*100).toFixed(0)}% случаев`); if(got<80||got>330) throw new Error('странная вероятность');
+    const S5=fresh(); S5.budget=3e6; S5.camp.week=8; S5.camp.ap=10; const L5=t.lobby(); L5.offers=[]; t.A.lobbyPitch('bank'); S5.camp.ap=10; t.A.lobbyPitch('bank');
+    const h=t.lobbyScreen(); if(!h.includes('data-a="lobbyPitch"')) throw new Error('нет кнопок «Предложить услуги»');
+    // отдел по связям с бизнесом повышает выплаты
+    const pay=(withPost)=>{ const S6=fresh(); S6.budget=1e6; const L6=t.lobby(); L6.offers=[{gid:'oil',pay:1e6,exp:99,haggled:false}]; if(withPost){ t.getS().pty={loy:50,posts:{treas:{name:'А Б',comp:70,amb:2,week:0},lobby:{name:'В Г',comp:70,amb:2,week:0}},cands:{}} } const b=S6.budget; t.A.lobbyYes(0); return S6.budget-b };
+    const p0=pay(false),p1=pay(true); console.log(`сделка на $1 млн: без отдела +${(p0/1e3)|0}k, с отделом +${(p1/1e3)|0}k`); if(!(p1>p0)) throw new Error('отдел не повышает выплаты'); }
+  // 5) бюджеты стартов снижены у всех
+  console.log('стартовые бюджеты:',t.BIOS.map(b=>b.name+' '+(b.budget/1e6).toFixed(1)+'M').join(', ')); if(t.BIOS.some(b=>b.budget>2.6e6)) throw new Error('бюджет не снижен');
+  // 6) быстрый старт и экраны главной
+  { t.A.restart&&t.A.restart(); if(t.getS()) throw new Error('restart'); if(t.getUIS()!=='menu') throw new Error('не главная');
+    t.A.goSetup(); if(t.getUIS()!=='setup') throw new Error('goSetup'); const v=g.getView(); if(v.key!=='setup'||!/id="setup"/.test(v.html||'')) throw new Error('экран создания не показан');
+    t.A.backMenu(); if(g.getView().key!=='menu'||/id="setup"/.test(g.getView().html||'')) throw new Error('на главной остались элементы создания кандидата');
+    for(let i=0;i<30;i++){ t.A.quick(); const S7=t.getS(); if(!S7||S7.phase!=='campaign') throw new Error('быстрый старт не создал игру'); if(!(S7.budget<=2.6e6)) throw new Error('бюджет быстрого старта'); okNum(S7); t.A.restart(); }
+    console.log('главная: меню отдельно от создания кандидата; быстрый старт x30 без ошибок'); }
+}

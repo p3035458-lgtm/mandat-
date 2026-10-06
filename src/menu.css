@@ -1,0 +1,44 @@
+/* ===== Главная страница ===== */
+.home { position: relative; min-height: calc(100dvh - 32px); border-radius: 12px; overflow: hidden; display: flex; align-items: center;
+        background: #050a18; border: 1px solid var(--line-2); }
+.home-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% center; }
+.home-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(4,9,22,.97) 0%, rgba(4,9,22,.9) 32%, rgba(4,9,22,.35) 62%, rgba(4,9,22,0) 100%); }
+.home-in { position: relative; z-index: 1; padding: 48px clamp(20px, 5vw, 64px); max-width: 560px; width: 100%; }
+.home-logo { font-family: var(--f-display); font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+             font-size: clamp(44px, 7vw, 84px); line-height: 1; background: linear-gradient(180deg, #fff, #8fa3c8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.home-tag { margin: 12px 0 28px; color: var(--muted); font-size: 16px; max-width: 42ch; }
+.home-actions { display: grid; gap: 10px; }
+.hbtn { display: flex; align-items: center; gap: 14px; text-align: left; padding: 14px 18px; border-radius: 10px; cursor: pointer;
+        background: rgba(18, 28, 56, .78); border: 1px solid var(--line-2); color: var(--text, #e8eefc); font: inherit; backdrop-filter: blur(6px); }
+.hbtn b { display: block; font-size: 17px; font-weight: 600; }
+.hbtn small { display: block; margin-top: 2px; font-size: 12.5px; color: var(--muted); }
+.hbtn .hic { flex: none; width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; background: rgba(61,132,255,.16); color: #9ec0ff; }
+.hbtn:hover:not(:disabled) { border-color: var(--blue-2); background: rgba(26, 42, 84, .9); }
+.hbtn.primary { background: linear-gradient(135deg, #2a6bff, #1f4fd1); border-color: #5d8dff; }
+.hbtn.primary small { color: #cfe0ff; }
+.hbtn.primary .hic { background: rgba(255,255,255,.18); color: #fff; }
+.hbtn:disabled { opacity: .45; cursor: default; }
+.home-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 22px; }
+.hlink { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; padding: 4px 0; }
+.hlink:hover { color: #fff; }
+
+.setup-page { display: grid; gap: 12px; }
+.setup-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.setup-head p { margin: 0; font-size: 14px; }
+
+@media (max-width: 760px) {
+  .home-bg { object-position: 70% center; }
+  .home-shade { background: linear-gradient(180deg, rgba(4,9,22,.55) 0%, rgba(4,9,22,.95) 55%); }
+  .home { align-items: flex-end; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-bg { animation: a-ken 26s ease-in-out infinite alternate; }
+  .screen-enter .home-logo { animation: a-rise .8s var(--ease) .1s backwards; }
+  .screen-enter .home-tag { animation: a-rise .7s var(--ease) .2s backwards; }
+  .screen-enter .hbtn { animation: a-rise .5s var(--ease) backwards; }
+  .screen-enter .hbtn:nth-child(1) { animation-delay: .3s }
+  .screen-enter .hbtn:nth-child(2) { animation-delay: .38s }
+  .screen-enter .hbtn:nth-child(3) { animation-delay: .46s }
+  .hbtn { transition: transform .14s var(--ease), border-color .15s, background .15s; }
+  .hbtn:hover:not(:disabled) { transform: translateX(5px); }
+}

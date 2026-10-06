@@ -1,28 +1,39 @@
-import { A, IMG, loadSave, setupInner } from '../game.js';
+import { A, IMG, loadSave } from '../game.js';
 
-// Главное меню. Форма «Новая игра» (setupInner) пока остаётся HTML-строкой — следующий шаг миграции.
+const PHASE = {
+  campaign: 'Предвыборная кампания', eday: 'День выборов', night: 'Ночь выборов', victory: 'Победа на выборах',
+  defeat: 'Поражение', cabinet: 'Формирование правительства', presidency: 'Президентство', legacy: 'Итоги карьеры', coup: 'Переворот',
+};
+
+// Главная страница: только меню. Создание кандидата вынесено на отдельный экран «setup».
 export default function Menu() {
   const sv = loadSave();
-  const hasSave = !!(sv && sv.phase);
+  const has = !!(sv && sv.phase);
+  const where = has ? `${PHASE[sv.phase] || 'Игра'}${sv.camp && sv.phase === 'campaign' ? `, неделя ${sv.camp.week}` : ''}` : '';
   return (
-    <>
-      <section className="menu1">
-        <img className="menu-bg" src={IMG.menu} alt="" loading="lazy" />
-        <div className="menu-shade" />
-        <div className="menu-in">
-          <div className="logo">Mandate</div>
-          <nav className="menu-nav">
-            <button className="mbtn" onClick={() => A.goSetup()}><span className="ic">⌂</span>Новая игра</button>
-            <button className="mbtn" disabled={!hasSave} onClick={() => A.continue()}>
-              <span className="ic">↻</span>Продолжить{hasSave && <small>{sv.name}</small>}
-            </button>
-            <button className="mbtn" onClick={() => A.settings()}><span className="ic">⚙</span>Настройки</button>
-            <button className="mbtn" onClick={() => A.achievements()}><span className="ic">★</span>Достижения</button>
-            <button className="mbtn" onClick={() => A.howto()}><span className="ic">?</span>Как играть</button>
-          </nav>
+    <section className="home">
+      <img className="home-bg" src={IMG.menu} alt="" />
+      <div className="home-shade" />
+      <div className="home-in">
+        <div className="home-logo">Mandate</div>
+        <p className="home-tag">Политический симулятор: выборы, деньги, лобби и власть</p>
+        <div className="home-actions">
+          <button className="hbtn primary" onClick={() => A.goSetup()}>
+            <span className="hic">⌂</span><span><b>Новая игра</b><small>Создать кандидата и начать кампанию</small></span>
+          </button>
+          <button className="hbtn" disabled={!has} onClick={() => A.continue()}>
+            <span className="hic">↻</span><span><b>Продолжить</b><small>{has ? `${sv.name} · ${where}` : 'Нет сохранённой игры'}</small></span>
+          </button>
+          <button className="hbtn" onClick={() => A.quick()}>
+            <span className="hic">⚡</span><span><b>Быстрый старт</b><small>Случайный кандидат, сразу в бой</small></span>
+          </button>
         </div>
-      </section>
-      <section id="setup" className="card setup2" dangerouslySetInnerHTML={{ __html: setupInner() }} />
-    </>
+        <div className="home-links">
+          <button className="hlink" onClick={() => A.settings()}>⚙ Настройки</button>
+          <button className="hlink" onClick={() => A.achievements()}>★ Достижения</button>
+          <button className="hlink" onClick={() => A.howto()}>? Как играть</button>
+        </div>
+      </div>
+    </section>
   );
 }

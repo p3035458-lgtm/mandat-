@@ -63,11 +63,11 @@ const RIVALS={
    blurb:'Популист-антисистемщик. Обещает «вычистить элиты».'},
 };
 const BIOS=[
- {id:'biz',cha:62,comp:70,name:'Предприниматель',desc:'Построил логистическую компанию с нуля. Свои деньги и понятный язык экономики, но бизнес-прошлое проверят под лупой.',budget:6.2e6,trust:54,rec:52,issues:{jobs:40,prices:34},skeleton:.55,skel:'офшорная компания, через которую 8 лет назад прошли $12 млн'},
- {id:'gov',cha:58,comp:72,name:'Губернатор',desc:'Два срока руководил Озёрным регионом. Узнаваем и опытен, но отвечает за решения прошлых лет.',budget:4.7e6,trust:58,rec:61,issues:{health:30,education:32,jobs:26},skeleton:.4,bonus:{north:6},skel:'контракт на строительство моста, подписанный в бытность губернатором'},
- {id:'jour',cha:68,comp:60,name:'Журналист-расследователь',desc:'Разоблачил схему в министерстве транспорта. Высокое доверие, мало денег.',budget:3.6e6,trust:68,rec:50,issues:{corruption:50},skeleton:.2,skel:'источник в старом расследовании, который получал деньги'},
- {id:'mil',cha:55,comp:64,name:'Генерал в отставке',desc:'Командовал миротворческой миссией. Сильная тема безопасности, слабая экономическая повестка.',budget:4.4e6,trust:65,rec:48,issues:{security:52},skeleton:.3,skel:'закупка бронежилетов по завышенной цене в бытность командующим'},
- {id:'doc',cha:60,comp:70,name:'Главврач',desc:'Руководил крупнейшей больницей страны во время эпидемии. Люди доверяют, но знают мало.',budget:4.0e6,trust:70,rec:40,issues:{health:54,education:24},skeleton:.25,skel:'контракт больницы с фармкомпанией, где работала ваша сестра'},
+ {id:'biz',cha:62,comp:70,name:'Предприниматель',desc:'Построил логистическую компанию с нуля. Свои деньги и понятный язык экономики, но бизнес-прошлое проверят под лупой.',budget:2.5e6,trust:54,rec:52,issues:{jobs:40,prices:34},skeleton:.55,skel:'офшорная компания, через которую 8 лет назад прошли $12 млн'},
+ {id:'gov',cha:58,comp:72,name:'Губернатор',desc:'Два срока руководил Озёрным регионом. Узнаваем и опытен, но отвечает за решения прошлых лет.',budget:1.9e6,trust:58,rec:61,issues:{health:30,education:32,jobs:26},skeleton:.4,bonus:{north:6},skel:'контракт на строительство моста, подписанный в бытность губернатором'},
+ {id:'jour',cha:68,comp:60,name:'Журналист-расследователь',desc:'Разоблачил схему в министерстве транспорта. Высокое доверие, мало денег.',budget:1.4e6,trust:68,rec:50,issues:{corruption:50},skeleton:.2,skel:'источник в старом расследовании, который получал деньги'},
+ {id:'mil',cha:55,comp:64,name:'Генерал в отставке',desc:'Командовал миротворческой миссией. Сильная тема безопасности, слабая экономическая повестка.',budget:1.8e6,trust:65,rec:48,issues:{security:52},skeleton:.3,skel:'закупка бронежилетов по завышенной цене в бытность командующим'},
+ {id:'doc',cha:60,comp:70,name:'Главврач',desc:'Руководил крупнейшей больницей страны во время эпидемии. Люди доверяют, но знают мало.',budget:1.6e6,trust:70,rec:40,issues:{health:54,education:24},skeleton:.25,skel:'контракт больницы с фармкомпанией, где работала ваша сестра'},
 ];
 
 /* ================= staff ================= */
@@ -200,7 +200,7 @@ function rivalsActive(){return active().filter(c=>c!=='player')}
 
 function newGame(o){
   const bio=BIOS.find(b=>b.id===o.bio);
-  S={ver:1,phase:'campaign',cycle:1,name:o.name,party:o.party,bio:o.bio,budget:Math.round(bio.budget*.6/1e5)*1e5,
+  S={ver:1,phase:'campaign',cycle:1,name:o.name,party:o.party,bio:o.bio,budget:bio.budget,
     staff:[],promises:[],news:[],queue:[],pending:[],used:{},flags:{},tab:'actions',sel:2,
     econ:{gdp:1.2e12,growth:1.8,trend:2.0,infl:4.2,unemp:5.1,wage:3200,debt:744e9,revenue:310e9,spending:340e9,energy:100,rate:4.5,recession:false},
     career:{elections:[],terms:[],laws:[],crises:[]}};
@@ -366,7 +366,7 @@ function nextWeek(){
   PL().trust+=(PL().trust0-PL().trust)*.01;
   S.regions.forEach(r=>{for(const c in r.effort)r.effort[c]*=.98;r.flood=false});
   rivalsAct();
-  cashWeek();attemptWeek();partyWeek();bribeWeek();armyWeek();lobbyWeek();
+  cashWeek();attemptWeek();partyWeek();bribeWeek();armyWeek();lobbyWeek();missionWeek();
   econWeek();
   S.pending=S.pending.filter(x=>{if(x.left>=cp.left){S.queue.push({id:x.id,p:x.p});return false}return true});
   if(cp.left>7&&Math.random()<.42)randomEvent();
@@ -544,15 +544,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CUR&&CUR.cancel)clo
 /* ---- React bridge: render() publishes a "view"; <App/> draws it ---- */
 export const SCREENS={};                       // phase key -> React component (migrated screens)
 export const registerScreen=(key,Comp)=>{SCREENS[key]=Comp};
-let VIEW=null,REV=0;const SUBS=new Set();
+let VIEW=null,REV=0,UIS='menu';const SUBS=new Set();
 export const subscribe=cb=>{SUBS.add(cb);return()=>SUBS.delete(cb)};
 export const getView=()=>VIEW;
 function render(){
-  const key=!S?'menu':S.phase;
+  if(S)UIS='menu';
+  const key=!S?UIS:S.phase;
   let html=null,post=null;
   if(!SCREENS[key]){            // screen not migrated yet -> legacy HTML string
     switch(key){
       case 'menu':html=menuHTML();break;
+      case 'setup':html=`<section id="setup" class="card setup2"><button class="btn ghost" data-a="backMenu">← В меню</button>${setupInner()}</section>`;break;
       case 'campaign':html=campaignHTML();break;
       case 'eday':html=edayHTML();post=startEday;break;
       case 'night':html=nightHTML();post=startNight;break;
@@ -634,7 +636,7 @@ function startDebate(p){
   DB={n:p.n,r,rounds,i:0,score:0,log:[]};debRound();
 }
 A.debPick=v=>{
-  clearInterval(DBT);if(!DB)return;const rd=DB.rounds[DB.i],k=S.c[DB.r];let sc=0,txt='';
+  clearInterval(DBT);if(!DB||!S)return;const rd=DB.rounds[DB.i],k=S.c[DB.r];let sc=0,txt='';
   if(v==='facts'){const ps=PL().issues[rd.iss],rs=k.issues[rd.iss];sc=(ps-rs)/100*1.3+.15+((PL().comp||60)-60)/200+rnd(-.25,.25);txt=sc>0?'Вы приводите точные цифры. Модератор кивает.':'Цифры звучат неуверенно, соперник ловит вас на неточности.'}
   else if(v==='attack'){if(k.dirt){k.dirt--;sc=.7+rnd(0,.4);k.trust=clamp(k.trust-3,10,90);txt=`Вы достаёте документы о ${k.short}. Зал замирает.`}else{sc=rnd(-.6,.6);txt=sc>0?'Атака попала в цель.':'Атака выглядела как грубость.'}hurt(.8,.5)}
   else if(v==='story'){sc=(PL().rec>60?.25:.1)+(PL().trust-55)/90+((PL().cha||60)-60)/150+rnd(-.25,.25);txt=sc>0?'История про отца-шахтёра трогает зрителей.':'История звучит заученно.'}
@@ -1239,7 +1241,7 @@ function beginReelection(){
   for(const k in RIVALS){const r=RIVALS[k],c=S.c[k];Object.assign(c,{out:false,dirt:0,trust:r.trust,trust0:r.trust,rec:r.rec,leanMod:0})}
   if(lost==='carter'){Object.assign(S.c.carter,{name:'Сэмюэл Грант',short:'Грант',blurb:'Новый лидер Национального союза. Молод, агрессивен, без багажа.',rec:70,trust:60,trust0:60})}
   S.c.carter.leanMod=(50-G.approval)*.2;
-  S.cycle++;S.budget=Math.max(S.budget,0)+4.2e6;S.pending=[];
+  S.cycle++;S.budget=Math.max(S.budget,0)+2.2e6;S.pending=[];
   initCampaign(182,true);
   news(`Президент выполнил ${t.kept} из ${t.promises.length} обещаний`,'pres');
   news(`${S.c.carter.name} выдвинут кандидатом от партии «${S.c.carter.party}»`,'rival');
@@ -1406,7 +1408,7 @@ function mapScreen(){
    <div class="shares" style="margin-top:4px">${acts.map(c=>`<div class="sh"><span>${c==='player'?'<b>Вы</b>':esc(S.c[c].short)}</span><span class="bar"><i style="width:${s[c]}%;background:${S.c[c].color}"></i></span><span class="p">${pct(s[c])}</span></div>`).join('')}</div>
    <button class="btn primary wide" data-a="rally" data-v="${i}">Провести митинг</button>
    <div class="muted" style="font-size:12px;text-align:center;margin-top:3px">${money(COST.rally)} · 3 часа${st.flood?' · после наводнения эффект сильнее':''}</div>
-   <div class="rp-acts"><button class="btn mini" data-a="ad" data-v="${i}">Реклама · ${money(COST.ad)}</button><button class="btn mini" data-a="neg" data-v="${i}">Негатив · ${money(COST.neg)}</button></div>${cashInfo(i)}
+   <div class="rp-acts"><button class="btn mini" data-a="ad" data-v="${i}">Реклама · ${money(COST.ad)}</button><button class="btn mini" data-a="neg" data-v="${i}">Негатив · ${money(COST.neg)}</button></div>${cashInfo(i)}${missionInfo(i)}
   </aside></div>`}
 
 /* ---------- 6. weekly plan ---------- */
@@ -1514,7 +1516,7 @@ function hireScreen(){
   <div class="list">${list.map(s=>{const h=has(s.id);const taken=!h&&S.staff.some(id=>STAFF_BY[id].role===s.role);
    return `<div class="hire ${h?'hired':''}">${PH(s.img,'hire-ph',s.name)}<div class="hire-b"><div class="row between"><b class="sname">${esc(s.name)}</b><span class="hire-sal">${money(s.salary).replace(' тыс.',' 000')}/мес</span></div><div class="muted" style="font-size:13px">${s.role} · опыт ${'●'.repeat(s.exp)}${'○'.repeat(5-s.exp)}</div>
    <div class="pks">${s.perks.map(perk).join('')}${s.risk?`<div class="pk"><span>Риск скандалов</span><b class="down">+${s.risk}%</b></div>`:''}</div></div>
-   <div>${h?`<button class="btn danger" data-a="fireStaff" data-v="${s.id}">Уволить</button>`:`<button class="btn ${taken?'':'primary'}" data-a="hire" data-v="${s.id}" ${taken?'disabled':''}>${taken?'Занято':'Нанять'}</button>`}</div></div>`}).join('')}</div>`}
+   <div class="hire-btns"><button class="btn mini" data-a="person" data-v="staff|${s.id}">Профиль</button>${h?`<button class="btn danger" data-a="fireStaff" data-v="${s.id}">Уволить</button>`:`<button class="btn ${taken?'':'primary'}" data-a="hire" data-v="${s.id}" ${taken?'disabled':''}>${taken?'Занято':'Нанять'}</button>`}</div></div>`}).join('')}</div>`}
 
 /* ---------- 8. social groups ---------- */
 const GROUP_META={youth:{ic:'☺',tags:['18-25']},students:{ic:'✎',tags:['18-25','students']},biz:{ic:'$',tags:['26-40','41-60','biz']},workers:{ic:'⚒',tags:['26-40','41-60','work']},civil:{ic:'▣',tags:['41-60']},pens:{ic:'♥',tags:['60+']},farm:{ic:'❦',tags:['41-60','work']},fam:{ic:'⌂',tags:['26-40']}};
@@ -1617,8 +1619,7 @@ function menuHTML(){
     <button class="mbtn" data-a="settings"><span class="ic">⚙</span>Настройки</button>
     <button class="mbtn" data-a="achievements"><span class="ic">★</span>Достижения</button>
     <button class="mbtn" data-a="howto"><span class="ic">?</span>Как играть</button>
-   </nav></div></section>
-  <section id="setup" class="card setup2">${setupInner()}</section>`}
+   </nav></div></section>`}
 A.goSetup=()=>{const el=$('#setup');if(el)el.scrollIntoView({behavior:'smooth'})};
 function settingsGet(){try{return JSON.parse(localStorage.getItem('mandat-settings')||'{}')}catch(e){return {}}}
 function settingsSet(o){try{localStorage.setItem('mandat-settings',JSON.stringify(o))}catch(e){}}
@@ -1946,6 +1947,7 @@ EV.rumor={build(p){
 const PARTY_TREE=[
  {id:'sec',name:'Секретарь партии',parent:null,lv:1,fx:{gotv:.25},d:'Открывает региональных глав. Мобилизация волонтёров +25%.'},
  {id:'treas',name:'Казначей',parent:null,lv:1,fx:{fund:.2},d:'Пожертвования +20%.'},
+ {id:'lobby',name:'Начальник отдела по связям с бизнесом',parent:'treas',lv:2,fx:{},d:'Лоббистские сделки приносят на 20% больше, риск огласки ниже, можно держать до пяти предложений.'},
  {id:'pr',name:'Руководитель пресс-службы',parent:null,lv:1,fx:{dmg:.12},d:'Ущерб от скандалов −12%.'},
  {id:'council',name:'Председатель политсовета',parent:null,lv:1,fx:{eff:.05},d:'Открывает молодёжное крыло, юротдел и службу безопасности. Эффективность кампании +5%.'},
  {id:'youth',name:'Лидер молодёжного крыла',parent:'council',lv:2,fx:{},d:'Каждую неделю: узнаваемость +0,12 и рост среди молодёжи.'},
@@ -1967,30 +1969,13 @@ function partyFx(k){const P=S&&S.pty;if(!P)return 0;let v=0;for(const id in P.po
 const partyFees=P=>Math.max(0,P.loy-30)*1200;
 const partyPay=P=>Object.keys(P.posts).reduce((a,id)=>a+({1:12e3,2:8e3,3:4e3}[POST_BY[id]?POST_BY[id].lv:3]),0);
 function loyGain(pd,c){return (pd.lv===1?10:pd.lv===2?6.5:4.5)*(.65+c.amb*.35)}
-function genCand(){const w=Math.random()<.35,g=w?PN.w:PN.m;return{name:pick(g.f)+' '+pick(g.l),comp:ri(48,88),amb:ri(1,3),w}}
-function candsFor(id){const P=party(),wk=S.camp?S.camp.week:0,c=P.cands[id];if(c&&wk-c.week<6)return c.list;
-  const list=[genCand(),genCand(),genCand()];list[0].amb=1;list[2].amb=3;P.cands[id]={week:wk,list};return list}
+
+
 const ptInit=n=>String(n).split(' ').map(x=>x[0]).join('').slice(0,2);
 const ambDots=a=>'●'.repeat(a)+'○'.repeat(3-a);
 
-A.post=v=>{
-  const pd=POST_BY[v];if(!pd||!unlocked(pd)||party().posts[v])return;
-  const list=candsFor(v);
-  modal(`<div class="mhead"><span class="kicker blue">Назначение</span><h2>${esc(pd.name)}</h2></div><div class="mbody"><p class="muted">${pd.d}</p>
-  <p class="muted" style="font-size:13px">Чем выше амбиции, тем больше лояльности вы получите, но тем выше риск предательства.</p>
-  <div class="stack">${list.map((c,i)=>`<div class="item cand"><div><b>${esc(c.name)}</b><div class="muted">Компетентность ${c.comp} · амбиции ${ambDots(c.amb)}</div><div class="muted" style="font-size:12px">${c.amb===3?'Рвётся вверх: много лояльности, склонен к предательству.':c.amb===1?'Скромный профессионал: надёжен, но лояльности даёт мало.':'Рассудительный партиец без лишних претензий.'}${c.comp>=80?' Сильный управленец.':''}</div></div>
-  <button class="btn primary" data-a="appoint" data-v="${v}|${i}">Назначить<small style="display:block">Лояльность +${f1(loyGain(pd,c))}</small></button></div>`).join('')}</div>
-  <div class="mfoot"><button class="btn ghost" data-a="close">Закрыть</button></div></div>`);
-};
-A.appoint=v=>{
-  const [id,ix]=String(v).split('|'),pd=POST_BY[id],P=party();
-  if(!pd||P.posts[id]||!unlocked(pd))return;
-  const c=candsFor(id)[+ix];if(!c)return;
-  const g=loyGain(pd,c);
-  P.posts[id]={name:c.name,comp:c.comp,amb:c.amb,week:S.camp.week};P.cands[id]=null;P.loy=clamp(P.loy+g,0,100);
-  closeModal();
-  const a=anchor();burst(a.x,a.y-40,{emoji:'⭐',n:12});floatText(a.x,a.y-40,'Лояльность +'+f1(g),'good');
-  toast(`Назначение: ${pd.name} — ${c.name}. Лояльность +${f1(g)}.`);after()};
+
+
 A.dismiss=v=>{
   const pd=POST_BY[v],P=party(),m=P.posts[v];if(!m)return;
   const n=subtree(v).filter(x=>P.posts[x]).length;
@@ -2046,7 +2031,7 @@ EV.defect={build(p){
   const k=S.c[p.c],R=REG[p.i],P=party(),pd=R&&POST_BY['r_'+R.id];
   if(!k||k.out||!pd||!partyHas('sec')||P.posts[pd.id])return null;
   return{kicker:'Поддержка',title:`Перебежчик из штаба ${k.short}`,text:`Координатор ${esc(k.short)} в регионе <b>${esc(R.name)}</b> готов перейти на вашу сторону. Он требует должность главы местного отделения и обещает привести людей.`,choices:[
-    choice('Назначить главой отделения','Лояльность +, соперник −',()=>{P.posts[pd.id]={name:pick(PN.m.f)+' '+pick(PN.m.l),comp:ri(72,86),amb:3,defector:true,week:S.camp.week};P.loy=clamp(P.loy+4.5,0,100);S.regions[p.i].effort[p.c]-=2;S.regions[p.i].effort.player+=2.5;k.trust=clamp(k.trust-2,10,90);return `Перебежчик возглавил отделение в регионе ${R.name}. Вам +2,5, ${k.short} −2. Лояльность +4,5. Перебежчик амбициозен, следите за ним.`}),
+    choice('Назначить главой отделения','Лояльность +, соперник −',()=>{P.posts[pd.id]=Object.assign(newPerson(pd.id,[],{comp:ri(72,86),amb:3}),{defector:true,week:S.camp.week});P.loy=clamp(P.loy+4.5,0,100);S.regions[p.i].effort[p.c]-=2;S.regions[p.i].effort.player+=2.5;k.trust=clamp(k.trust-2,10,90);return `Перебежчик возглавил отделение в регионе ${R.name}. Вам +2,5, ${k.short} −2. Лояльность +4,5. Перебежчик амбициозен, следите за ним.`}),
     choice('Заплатить и отпустить','$200 тыс.',()=>{S.budget-=200e3;S.regions[p.i].effort[p.c]-=1.5;return `Перебежчик уходит из политики с деньгами. ${k.short} −1,5 в регионе ${R.name}.`}),
     choice('Отказаться','',()=>'Вы не стали рисковать: слишком похоже на ловушку.'),
   ]}}};
@@ -2105,36 +2090,7 @@ EV.bribecaught={build(p){
   ]}}};
 
 /* ---------- вкладка «Партия и подкуп» ---------- */
-function partyScreen(){
-  const P=party(),L=P.loy,R=REG[S.sel];
-  const tier=L<25?['Раскол близко','down']:L<50?['Напряжённо','warn']:L<75?['Стабильно','flat']:['Монолит','up'];
-  const filled=Object.keys(P.posts).length;
-  const node=pd=>{
-    const m=P.posts[pd.id],open=unlocked(pd),kids=kidsOf(pd.id);
-    const body=m?`<span class="pt-av">${esc(ptInit(m.name))}</span><div class="pt-body"><b>${esc(pd.name)}</b><small>${esc(m.name)} · комп. ${m.comp} · амбиции ${ambDots(m.amb)}${m.defector?' · перебежчик':''}</small><small class="muted">${pd.d}</small></div><button class="btn mini" data-a="dismiss" data-v="${pd.id}">Снять</button>`
-      :open?`<span class="pt-av empty">+</span><div class="pt-body"><b>${esc(pd.name)}</b><small class="muted">Вакантно. ${pd.d}</small></div><button class="btn mini primary" data-a="post" data-v="${pd.id}">Назначить</button>`
-      :`<span class="pt-av empty">🔒</span><div class="pt-body"><b>${esc(pd.name)}</b><small class="muted">Нужен: ${esc(POST_BY[pd.parent].name)}</small></div>`;
-    const sub=kids.length?(m?`<ul>${kids.map(node).join('')}</ul>`:`<div class="pt-hint">Откроет ещё ${kids.length} ${plural(kids.length,'должность','должности','должностей')}</div>`):'';
-    return `<li class="pt-node ${m?'filled':open?'vacant':'locked'}"><div class="pt-card">${body}</div>${sub}</li>`};
-  const roots=PARTY_TREE.filter(p=>!p.parent);
-  const tree=`<ul class="ptree"><li class="pt-node filled root"><div class="pt-card"><span class="pt-av">${esc(ptInit(S.name||'Л'))}</span><div class="pt-body"><b>Лидер партии «${esc(S.party)}»</b><small>${esc(S.name||'')}</small></div></div><ul>${roots.map(node).join('')}</ul></li></ul>`;
-  const rs=rivalsActive(),B=bribeState();
-  const chips=REG.map((r,i)=>`<button class="btn mini ${i===S.sel?'primary':''}" data-a="sel" data-v="${i}">${esc(r.name)}</button>`).join('');
-  const rivals=rs.map(c=>{const k=S.c[c];return `<div class="item"><div class="row" style="justify-content:space-between;gap:10px"><b style="color:${k.color}">${esc(k.name)}</b><span class="muted">${esc(k.party)}${k.dirt?` · <span class="up">компромат: ${k.dirt}</span>`:''}</span></div>
-   <div class="stack" style="margin-top:8px;gap:6px">${Object.entries(BRIBE).map(([t,op])=>`<button class="btn" style="text-align:left" data-a="bribeAsk" data-v="${c}|${t}"><b>${op.name}</b> · от ${money(rnd4(op.cost*.6))} · ${op.ap} ч · успех ~${Math.round(op.p*100)}%<br><small class="muted">${op.d}</small></button>`).join('')}</div></div>`}).join('');
-  return `<div class="loyalty card-in">
-    <div class="row" style="justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="eyebrow">Лояльность партийной элиты</div><div class="loy-num">${Math.round(L)}<small>/100</small> <span class="chip ${tier[1]}">${tier[0]}</span></div></div>
-    <div class="muted" style="text-align:right;font-size:13px">Должностей занято: ${filled}/${PARTY_TREE.length}<br>Взносы элиты: +${money(partyFees(P))} · содержание аппарата: −${money(partyPay(P))} в неделю</div></div>
-    <div class="lbar"><i style="width:${clamp(L,0,100)}%"></i></div>
-    <p class="muted" style="font-size:13px;margin:8px 0">Лояльность растёт, когда вы раздаёте должности, и медленно падает сама. Её можно тратить, пока она есть. Чем она выше, тем реже предают назначенцы.</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-     <button class="btn" data-a="mobilize" ${L<10?'disabled':''}>🚩 Поднять аппарат · ${esc(R.name)}<small style="display:block" class="muted">−10 лояльности · 1 ч · +3…4 поддержки</small></button>
-     <button class="btn" data-a="shield" ${L<12?'disabled':''}>🛡 Закрыть вопросы связями<small style="display:block" class="muted">−12 лояльности · риск огласки −60%</small></button></div></div>
-  <div class="eyebrow" style="margin-top:16px">Древо должностей фракции</div>${tree}
-  <div class="eyebrow" style="margin-top:16px">Подкуп людей из окружения соперников</div>
-  <p class="muted" style="font-size:13px;margin:4px 0 8px">Выберите регион цели. Операции тайные, но риск огласки копится: сейчас он <b>${cashRiskLabel(B.heat)}</b>. Если дело всплывёт, пострадает доверие.</p>
-  <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
-  <div class="grid3">${rivals||'<p class="muted">Нет активных соперников.</p>'}</div>`}
+
 
 
 /* =====================================================================
@@ -2372,7 +2328,8 @@ function weeklyBudget(){
   const side=L?L.side:0;don*=side>=0?1-side/250:1+(-side)/300;
   const sec=SEC_COST[cp.sec||0];
   const partyNet=P?partyFees(P)-partyPay(P):0;
-  return{don,sal,overhead:OVERHEAD,sec,partyNet,net:don-sal-OVERHEAD-sec+partyNet}}
+  const ov=OVERHEAD+MISSION_WEEK*((cp.missions||[]).length);
+  return{don,sal,overhead:ov,sec,partyNet,net:don-sal-ov-sec+partyNet}}
 function budgetHint(){
   if(!S.camp)return'';const n=weeklyBudget().net;
   return `<small class="${n<0?'down':'up'}"> ${n<0?'−':'+'}${money(Math.abs(n))}/нед</small>`}
@@ -2381,7 +2338,7 @@ function budgetCard(){
   const row=(k,v,cls)=>`<div class="bud-row"><span>${k}</span><b class="${cls||''}">${v}</b></div>`;
   const sg=x=>(x<0?'−':'+')+money(Math.abs(x));
   return `<div class="bud"><div class="eyebrow">Бюджет недели</div>
-   ${row('Пожертвования',sg(w.don),'up')}${row('Зарплаты штаба','−'+money(w.sal),'down')}${row('Аренда и расходы штаба','−'+money(w.overhead),'down')}
+   ${row('Пожертвования',sg(w.don),'up')}${row('Зарплаты штаба','−'+money(w.sal),'down')}${row('Аренда, штаб и командировки','−'+money(w.overhead),'down')}
    ${w.sec?row(SEC_NAME[S.camp.sec||0],'−'+money(w.sec),'down'):''}
    ${S.pty&&Object.keys(S.pty.posts).length?row('Партия: взносы минус содержание',sg(w.partyNet),w.partyNet>=0?'up':'down'):''}
    <div class="bud-row total"><span>Итого за неделю</span><b class="${w.net<0?'down':'up'}">${sg(w.net)}</b></div>
@@ -2450,14 +2407,14 @@ function lobbySupport(g){
   if(s.army){const AR=army();if(GENERALS.some(x=>AR.gens[x.id].bought))armyBoost(s.army)}}
 A.lobbyYes=(v,btn,ev)=>{
   const L=lobby(),o=L.offers[+v];if(!o)return;const g=LOBBY_BY[o.gid];
-  S.budget+=o.pay;L.offers.splice(+v,1);L.deals++;L.heat+=g.heat*(partyHas('legal')?.85:1);
-  L.side=clamp(L.side+g.side,-100,100);L.owed.push({gid:g.id,pay:o.pay,week:S.camp.week});
+  const pay=Math.round(o.pay*lobbyMult()/1e4)*1e4;S.budget+=pay;L.offers.splice(+v,1);L.deals++;L.heat+=g.heat*(partyHas('legal')?.85:1)*(partyHas('lobby')?.85:1);
+  L.side=clamp(L.side+g.side,-100,100);L.owed.push({gid:g.id,pay,week:S.camp.week});
   lobbySupport(g);
-  const a=anchor(btn,ev);burst(a.x,a.y,{emoji:'💰',n:10});floatText(a.x,a.y-14,'+'+money(o.pay),'good');
-  toast(`Сделка: ${g.name}, +${money(o.pay)}. Вы обещали: ${g.want}.`);after()};
+  const a=anchor(btn,ev);burst(a.x,a.y,{emoji:'💰',n:10});floatText(a.x,a.y-14,'+'+money(pay),'good');
+  toast(`Сделка: ${g.name}, +${money(pay)}. Вы обещали: ${g.want}.`);after()};
 A.lobbyHaggle=(v)=>{
   const L=lobby(),o=L.offers[+v];if(!o||o.haggled)return;o.haggled=true;const g=LOBBY_BY[o.gid],r=Math.random();
-  if(r<.5){o.pay=rnd4(o.pay*1.35);toast(`${g.name} согласились на ${money(o.pay)}.`)}
+  if(r<.5+(partyHas('lobby')?.15:0)){o.pay=rnd4(o.pay*1.35);toast(`${g.name} согласились на ${money(o.pay)}.`)}
   else if(r<.8)toast(`${g.name} не изменили условий: ${money(o.pay)}.`);
   else{L.offers.splice(+v,1);const mr=mainRival();if(mr)addEffortAll(mr,.5);toast(`${g.name} потеряли терпение и ушли к сопернику.`)}
   after()};
@@ -2487,7 +2444,7 @@ function lobbyWeek(){
   const L=lobby(),cp=S.camp;
   L.side*=.985;L.heat*=.92;
   L.offers=L.offers.filter(o=>o.exp>=cp.week);
-  if(L.offers.length<3&&Math.random()<.3+(L.side<-30?.12:0)-(L.side>40?.08:0)){
+  if(L.offers.length<(partyHas('lobby')?4:3)&&Math.random()<.3+(L.side<-30?.12:0)-(L.side>40?.08:0)){
     const used=new Set([...L.offers.map(o=>o.gid),...L.foes]);const pool=LOBBY.filter(g=>!used.has(g.id));
     if(pool.length){const g=pick(pool);L.offers.push({gid:g.id,pay:rnd4(rnd(g.pay[0],g.pay[1])),exp:cp.week+3,haggled:false});
       setTimeout(()=>toast(`Новое предложение лоббиста: ${g.name}. Откройте вкладку «Лобби и охрана».`),400)}}
@@ -2537,6 +2494,7 @@ function lobbyScreen(){
     <div style="font-size:13px">Платят: <b class="up">+${money(o.pay)}</b> · ${supText(g)}</div>
     <div class="muted" style="font-size:12px">Позиция ${g.side>0?'+':''}${g.side} · риск огласки +${g.heat} · предложение до недели ${o.exp}${o.haggled?' · торг уже был':''}</div></div>
     <div class="lob-act"><button class="btn primary mini" data-a="lobbyYes" data-v="${i}">Принять</button><button class="btn mini" data-a="lobbyHaggle" data-v="${i}" ${o.haggled?'disabled':''}>Торговаться</button><button class="btn mini" data-a="lobbyNo" data-v="${i}|pub">Отказать публично</button><button class="btn mini" data-a="lobbyNo" data-v="${i}|quiet">Отказать тихо</button></div></div>`}).join('');
+  const pitch=LOBBY.filter(g=>!L.foes.includes(g.id)&&!L.offers.some(o=>o.gid===g.id)).map(g=>{const cd=(L.pitch&&L.pitch[g.id]!=null)?L.pitch[g.id]:-9,wait=cd+3-cp.week;return `<div class="item row" style="justify-content:space-between;gap:10px;align-items:center"><div><b>${esc(g.name)}</b><div class="muted" style="font-size:13px">Вы предложите: ${esc(g.want)} · платят около ${money(rnd4((g.pay[0]+g.pay[1])/2))}</div></div><button class="btn mini" data-a="lobbyPitch" data-v="${g.id}" ${wait>0?'disabled':''}>${wait>0?`через ${wait} нед.`:'Предложить услуги · 1 ч'}</button></div>`}).join('');
   const owed=L.owed.length?L.owed.map(o=>`<li>${esc(LOBBY_BY[o.gid].name)}: ${esc(LOBBY_BY[o.gid].want)} (получено ${money(o.pay)})</li>`).join(''):'';
   const foes=L.foes.length?L.foes.map(id=>`<li>${esc(LOBBY_BY[id].name)}</li>`).join(''):'';
   return budgetCard()+`
@@ -2552,8 +2510,271 @@ function lobbyScreen(){
   <div class="secgrid">${secBtns}</div>
   <div class="eyebrow" style="margin-top:16px">Предложения лоббистов</div>
   <div class="stack" style="gap:8px">${offers||'<p class="muted">Сейчас предложений нет. Они приходят случайно, и срок у каждого три недели.</p>'}</div>
+  <div class="eyebrow" style="margin-top:16px">Предложить свои услуги за деньги</div><p class="muted" style="font-size:13px;margin:4px 0 8px">Лоббируйте чужие интересы по своей инициативе: чем выше ваша узнаваемость, тем охотнее платят. Чем ближе вы к народу, тем реже верят вашим обещаниям.</p><div class="stack" style="gap:6px">${pitch||'<p class="muted">Все группы уже заняты.</p>'}</div>
   ${owed?`<div class="eyebrow" style="margin-top:16px">Ваши обязательства</div><ul class="muted" style="margin:4px 0 0 18px;font-size:13px">${owed}</ul><p class="muted" style="font-size:12.5px">Обещания придётся выполнять в президентстве, иначе лоббисты станут врагами.</p>`:''}
   ${foes?`<div class="eyebrow" style="margin-top:16px">Враги</div><ul class="muted" style="margin:4px 0 0 18px;font-size:13px">${foes}</ul>`:''}`}
+
+
+/* =====================================================================
+   ЛЮДИ: профили кандидатов (биография вместо цифр), командировки в спорные регионы
+   ===================================================================== */
+function seeded(seed){let a=hashStr(seed)||1;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const FEM_FIRST=/^(Елена|Марина|Татьяна|Наталья|Ирина|Леся|Оксана|Вера|Алина|Ольга|Яна|Анна|Мария|Светлана|Юлия|Дарья|Софья|Виктория|Кира)$/;
+const isFemName=n=>FEM_FIRST.test(String(n).split(' ')[0]);
+const PRF={
+ careers:{
+  sec:['помощник депутата','руководитель областного отделения','координатор трёх избирательных кампаний','заместитель главы районной администрации','партийный организатор'],
+  treas:['финансовый директор холдинга','аудитор в консалтинговой фирме','главный бухгалтер партии','руководитель банковского отдела','налоговый инспектор'],
+  pr:['редактор новостной программы','корреспондент телеканала','заместитель пресс-секретаря министра','руководитель агентства коммуникаций','обозреватель деловой газеты'],
+  council:['профессор политологии','председатель областного партийного совета','депутат областного собрания','автор партийной программы','советник министра'],
+  youth:['лидер студенческого союза','организатор волонтёрских акций','блогер с миллионной аудиторией','председатель молодёжного парламента','куратор образовательных проектов'],
+  legal:['судья в отставке','заместитель прокурора области','адвокат по избирательным спорам','юрист крупной корпорации','эксперт ЦИК'],
+  guard:['офицер службы охраны','полковник полиции в отставке','начальник охраны делового центра','инструктор спецподразделения','аналитик службы безопасности'],
+  lobby:['директор по связям с государством','помощник министра экономики','переговорщик отраслевых ассоциаций','консультант по правительственным отношениям','депутат комитета по бюджету'],
+  reg:['директор местного завода','глава районной администрации','руководитель профсоюза региона','местный предприниматель','заведующий городской больницей'],
+  pt:['политтехнолог трёх региональных кампаний','директор по стратегии в агентстве','руководитель штаба на выборах мэра','консультант по избирательным кампаниям'],
+  an:['социолог в исследовательском центре','аналитик данных в банке','редактор опросной службы','преподаватель статистики'],
+  smm:['директор по цифровым медиа','продюсер вирусных кампаний','руководитель контент-студии'],
+  law:['юрист по избирательному праву','адвокат по делам о клевете','консультант парламентского комитета'],
+  gen:['помощник депутата','руководитель отдела в министерстве','региональный координатор','консультант партии'],
+ },
+ edu:['Университет Арданы (политология)','Столичная академия управления','Технологический институт','Юридическая академия','Институт журналистики','Экономический университет','Педагогический институт'],
+ eduBy:{legal:'Юридическая академия',guard:'Военная академия',pr:'Институт журналистики',treas:'Экономический университет',an:'Университет Арданы (социология)'},
+ merit:{
+  hi:['победа на выборах в трудном округе','антикризисный план, спасший региональное отделение','создание сети из сотен волонтёров с нуля','успешные переговоры, которые остановили раскол партии'],
+  mid:['уверенная работа на двух избирательных кампаниях','стабильные результаты на прошлых должностях','хорошая репутация среди коллег'],
+  lo:['энтузиазм и желание учиться','несколько небольших, но успешных проектов','работа в штабе без громких провалов'],
+ },
+ flaws:{
+  3:['открыто метит на пост выше своего','окружает себя людьми, преданными лично ему','известен резкими высказываниями о коллегах','хранит копии закрытых документов'],
+  2:['осторожен до медлительности','не любит публичных выступлений','бывает несдержан в переписке','склонен откладывать трудные решения'],
+  1:['слишком мягок с подчинёнными','избегает конфликтов, даже когда они нужны','редко берёт инициативу на себя','не умеет отстаивать свой бюджет'],
+ },
+ weakExtra:['долги по старому кредиту','плохие отношения с прессой','затяжной конфликт с бывшим начальником','небольшая, но заметная история с налоговой'],
+ quotes:{
+  3:['Если не я, то кто? Должности сами не раздаются.','Хороший работник должен получать то, чего достоин.','Партии нужны сильные, а не удобные.'],
+  2:['Я делаю свою работу и не ищу славы.','Лучше сделать правильно, чем быстро.','Решения принимает команда, я лишь отвечаю за результат.'],
+  1:['Я человек команды. Скажите, что нужно, и я сделаю.','Моё слово стоит больше любой бумаги.','Не люблю громких слов, люблю выполненные задачи.'],
+ },
+ strong:{
+  sec:'умеет выстраивать партийную вертикаль',treas:'держит бюджеты и не любит лишних трат',pr:'держит удар в прямом эфире',council:'видит политическую картину целиком',
+  youth:'говорит с молодёжью на одном языке',legal:'знает, где в законе лазейки и где ловушки',guard:'просчитывает угрозы за несколько шагов',lobby:'умеет вести переговоры с бизнесом',reg:'знает свой регион до последней деревни',
+  pt:'чувствует настроение избирателей',an:'находит закономерности в сырых данных',smm:'делает ролики, которые разлетаются по сети',law:'выигрывает споры, которые кажутся проигранными',gen:'надёжный исполнитель',
+ },
+ strongTier:{hi:'принимает быстрые и точные решения',mid:'уверенно справляется с текущими задачами',lo:'быстро учится и не боится сложных задач'},
+};
+const PORT_M=['ch_m0','ch_m1','ch_m2','ch_m3','ch_m4'],PORT_F=['ch_f0','ch_f1','ch_f2','ch_f3','ch_f4'];
+function personKind(id){return String(id).startsWith('r_')?'reg':id}
+function newPerson(kind,used,over){
+  const w=Math.random()<.35,g=w?PN.w:PN.m,pool=(w?PORT_F:PORT_M).filter(x=>!(used||[]).includes(x));
+  const rid=String(kind).startsWith('r_')?String(kind).slice(2):REG[ri(0,REG.length-1)].id;
+  const p={name:pick(g.f)+' '+pick(g.l),comp:ri(48,88),amb:ri(1,3),w,seed:Math.random().toString(36).slice(2,9),age:ri(33,63),port:pick(pool.length?pool:(w?PORT_F:PORT_M)),kind:personKind(kind),home:rid};
+  return Object.assign(p,over||{})}
+function ensurePerson(m,postId){
+  if(m.w==null)m.w=isFemName(m.name);
+  if(!m.seed)m.seed=m.name;
+  if(!m.age)m.age=33+hashStr(m.name)%30;
+  if(!m.port)m.port=(m.w?PORT_F:PORT_M)[hashStr(m.name)%5];
+  if(!m.kind)m.kind=personKind(postId||'gen');
+  return m}
+const tierOf3=c=>c>=76?'hi':c>=58?'mid':'lo';
+function staffPerson(id){
+  const s=STAFF_BY[id],h=hashStr(id),org=/Студия|Агентство|человек/.test(s.name);
+  return{name:s.name,w:isFemName(s.name),comp:s.exp*18+4,amb:s.risk>=3?3:s.risk>=1?2:1,kind:s.cat,seed:'staff_'+id,age:30+h%25,port:s.img,staff:true,org,role:s.role,id}}
+function buildProfile(p){
+  const r=seeded((p.seed||p.name)+'|prof'),rp=a=>a[Math.floor(r()*a.length)],kind=p.kind||'gen';
+  const age=p.age||34+Math.floor(r()*28),hr=Math.floor(r()*REG.length),home=(p.home&&REG[REGI(p.home)]?REG[REGI(p.home)].name:REG[hr].name);
+  const pool=PRF.careers[kind]||PRF.careers.gen,picks=[];
+  while(picks.length<Math.min(3,pool.length)){const x=rp(pool);if(!picks.includes(x))picks.push(x)}
+  let y=2028-Math.max(6,age-25-Math.floor(r()*3));
+  const career=picks.map((t,i)=>{const a=y;if(i<picks.length-1){y+=3+Math.floor(r()*5);return{y:`${a}–${y}`,t}}return{y:`${a}–н. в.`,t}});
+  const tier=tierOf3(p.comp),amb=p.amb||2,G=(m,f)=>p.w?f:m,on=G('он','она');
+  const rumor={3:`Однопартийцы шепчутся, что ${on} метит выше своей должности и уже присматривается к чужим кабинетам.`,2:`О ${G('нём','ней')} говорят спокойно: ${on} делает свою работу и не лезет в интриги.`,1:`Коллеги называют ${G('его','её')} «человеком, который никогда не подведёт», но и громких побед за ${G('ним','ней')} нет.`}[amb];
+  return{age,home,edu:PRF.eduBy[kind]||rp(PRF.edu),career,merit:rp(PRF.merit[tier]),quote:rp(PRF.quotes[amb]),rumor,
+    strong:[PRF.strong[kind]||PRF.strong.gen,PRF.strongTier[tier]],
+    weak:[rp(PRF.flaws[amb]),tier==='lo'?'мало опыта на таком уровне':rp(PRF.weakExtra)]}}
+const districtOf=p=>{const f=buildProfile(p);return `${f.home} округ`};
+function personTags(p){
+  const t=[];
+  if(p.comp>=80)t.push(['Сильный управленец','up']);else if(p.comp<=55)t.push(['Мало опыта','warn']);
+  if(p.amb===3)t.push(['Честолюбив','warn']);else if(p.amb===1)t.push(['Надёжен','up']);
+  return t.map(([x,c])=>`<span class="chip ${c}" style="margin-left:0">${x}</span>`).join(' ')}
+const portrait=(p,cls)=>`<img class="${cls||'pt-img'}" src="${IMG[p.port]||''}" alt="${esc(p.name)}" loading="lazy">`;
+function profileHTML(p){
+  const f=buildProfile(p),G=(m,w)=>p.w?w:m,stars=Math.max(1,Math.round(p.comp/20)),age=p.age||f.age;
+  const bio=p.org
+    ?`Студия основана в ${2010+hashStr(p.seed)%9} году. ${G('Работает','Работает')} с политическими кампаниями и крупными брендами: ролики, таргет, управление репутацией. В команде ${(p.name.match(/\d+/)||[6])[0]} человек, большинство пришло из медиа.`
+    :`${G('Родился','Родилась')} и ${G('вырос','выросла')} в округе «${f.home}», ${G('выдвинут','выдвинута')} от местной организации. ${G('Окончил','Окончила')} ${f.edu}. Главное достижение: ${f.merit}.`;
+  return `<div class="prof"><div class="prof-ph">${portrait(p,'prof-img')}</div><div class="prof-b"><div class="prof-name">${esc(p.name)}</div>
+   <div class="muted">${p.org?'Команда':`${age} ${plural(age,'год','года','лет')}`} · ${p.org||p.staff?esc(p.role||''):`от округа «${esc(f.home)}»`}</div><div class="prof-q">«${esc(f.quote)}»</div><div style="margin-top:6px">${personTags(p)}</div></div></div>
+  <div class="prof-sec"><h4>Биография</h4><p>${bio}</p><ul class="prof-car">${f.career.map(c=>`<li><span>${c.y}</span>${esc(c.t)}</li>`).join('')}</ul></div>
+  <div class="prof-cols"><div><h4>Сильные стороны</h4><ul>${f.strong.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><h4>Слабые стороны</h4><ul>${f.weak.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div>
+  <div class="prof-sec"><h4>Что говорят о ${G('нём','ней')}</h4><p class="muted">${f.rumor}</p></div>
+  <div class="prof-rate">Профессионализм <span class="gstars">${'★'.repeat(stars)}${'☆'.repeat(5-stars)}</span></div>`}
+
+/* ---------- спорные регионы ---------- */
+function contest(i){
+  const s=shares(i),v=S.order.filter(c=>!S.c[c].out).map(c=>s[c]).sort((a,b)=>b-a),gap=(v[0]||0)-(v[1]||0);
+  return Math.round(clamp(1-gap/14,0,1)*70+clamp(s.und/22,0,1)*30)}
+const contestLabel=c=>c>=70?'жаркая борьба':c>=45?'спорный':c>=25?'есть шанс':'решён';
+const MISSION_COST=60e3,MISSION_WEEK=20e3;
+const missionOf=pid=>((S.camp&&S.camp.missions)||[]).find(m=>m.pid===pid);
+function missionInfo(i){
+  const ms=((S.camp&&S.camp.missions)||[]).filter(m=>m.reg===i),c=contest(i);
+  return `<div class="muted" style="font-size:12px;text-align:center;margin-top:6px">Спорность: <b>${contestLabel(c)}</b> (${c}/100)${ms.length?`<br>Агитируют: ${ms.map(m=>`${esc(m.name)} (${m.left} нед.)`).join(', ')}`:''}</div>`}
+
+function personRef(v){
+  const [k,a,b]=String(v).split('|');
+  if(k==='cand'){const p=candsFor(a)[+b];return p&&{p,k,a,b,pid:null}}
+  if(k==='post'){const m=party().posts[a];return m&&{p:ensurePerson(m,a),k,a,pid:'post:'+a}}
+  if(k==='staff'){if(!STAFF_BY[a])return null;return{p:staffPerson(a),k,a,pid:'staff:'+a}}
+  return null}
+function dispatchBlock(R){
+  if(!R.pid||!S.camp||S.phase!=='campaign')return'';
+  const m=missionOf(R.pid);
+  if(m)return `<p class="muted" style="margin:8px 0 0">Сейчас в командировке: регион «${esc(REG[m.reg].name)}», осталось ${m.left} нед.</p>`;
+  if(R.k==='staff'&&R.p.kind==='pt')return `<p class="muted" style="margin:8px 0 0">Руководитель кампании нужен в штабе и в регионы не выезжает.</p>`;
+  if(R.k==='post'&&R.a==='guard')return `<p class="muted" style="margin:8px 0 0">Начальник охраны не отходит от вас.</p>`;
+  if(R.k==='staff'&&!has(R.a))return '';
+  return `<p class="muted" style="margin:8px 0 0;font-size:13px">Можно отправить агитировать в спорный регион: ${money(MISSION_COST)} на выезд и ${money(MISSION_WEEK)} в неделю.</p>`}
+A.person=v=>{
+  const R=personRef(v);if(!R)return;
+  const {p,k,a,b}=R,busy=R.pid&&missionOf(R.pid);
+  const canGo=R.pid&&S.camp&&S.phase==='campaign'&&!busy&&!(k==='staff'&&(p.kind==='pt'||!has(a)))&&!(k==='post'&&a==='guard');
+  let btns='';
+  if(k==='cand')btns=`<button class="btn primary" data-a="appoint" data-v="${a}|${b}">Назначить</button><button class="btn" data-a="post" data-v="${a}">К списку кандидатов</button>`;
+  else if(k==='post')btns=`${canGo?`<button class="btn primary" data-a="dispatchAsk" data-v="post|${a}">Отправить в регион</button>`:''}${busy?`<button class="btn" data-a="recall" data-v="${R.pid}">Отозвать</button>`:''}<button class="btn danger" data-a="dismiss" data-v="${a}">Снять с должности</button>`;
+  else btns=`${canGo?`<button class="btn primary" data-a="dispatchAsk" data-v="staff|${a}">Отправить в регион</button>`:''}${busy?`<button class="btn" data-a="recall" data-v="${R.pid}">Отозвать</button>`:''}${has(a)?'':`<button class="btn ${canGo?'':'primary'}" data-a="hire" data-v="${a}">Нанять</button>`}`;
+  const title=k==='cand'?(a.startsWith('r_')?`Кандидат: ${POST_BY[a].name}`:`Кандидат: ${POST_BY[a].name} (от округа «${buildProfile(p).home}»)`):k==='post'?POST_BY[a].name:(STAFF_BY[a].role);
+  modal(`<div class="mhead"><span class="kicker blue">Профиль</span><h2>${esc(title)}</h2></div><div class="mbody prof-wrap">${profileHTML(p)}${dispatchBlock(R)}<div class="mfoot">${btns}<button class="btn ghost" data-a="close">Закрыть</button></div></div>`)};
+
+A.dispatchAsk=v=>{
+  const R=personRef(v);if(!R||!R.pid||missionOf(R.pid))return;
+  const rows=REG.map((r,i)=>({i,r,c:contest(i),s:shares(i)})).sort((x,y)=>y.c-x.c);
+  const me=S.order.filter(c=>!S.c[c].out);
+  modal(`<div class="mhead"><span class="kicker amber">Командировка</span><h2>${esc(R.p.name)}: куда ехать?</h2></div><div class="mbody"><p class="muted">Агитатор работает в регионе 3 недели. В самых спорных регионах его слова весят больше. Выезд ${money(MISSION_COST)}, потом ${money(MISSION_WEEK)} в неделю. На счету ${money(S.budget)}.</p>
+  <div class="evch">${rows.map((x,n)=>{const lead=me.slice().sort((a,b)=>x.s[b]-x.s[a])[0];return `<button class="evrow" data-a="dispatch" data-v="${v}|${x.i}" ${S.budget<MISSION_COST?'disabled':''}><span class="evn">${n+1}</span><b>${esc(x.r.name)}${n===0?' ★':''}</b><span class="eve"><span class="cbar"><i style="width:${x.c}%"></i></span> ${contestLabel(x.c)} · вы ${x.s.player.toFixed(0)}% · ${lead==='player'?'вы лидируете':esc(S.c[lead].short)+' '+x.s[lead].toFixed(0)+'%'} · не определились ${x.s.und.toFixed(0)}%</span></button>`}).join('')}</div>
+  <div class="mfoot"><button class="btn ghost" data-a="close">Отмена</button></div></div>`)};
+A.dispatch=v=>{
+  const [k,a,ri_]=String(v).split('|'),R=personRef(k+'|'+a),i=+ri_;
+  if(!R||!R.pid||missionOf(R.pid)||!REG[i])return;
+  closeModal();
+  if(S.budget<MISSION_COST){toast('Не хватает денег на выезд.');return}
+  S.budget-=MISSION_COST;
+  const p=R.p,c=contest(i),cp=S.camp;cp.missions=cp.missions||[];
+  cp.missions.push({pid:R.pid,name:p.name,w:!!p.w,reg:i,left:3,power:.55+p.comp/100*1.2,amb:p.amb,comp:p.comp,got:0});
+  toast(`${p.name} ${p.w?'отправлена':'отправлен'} в регион «${REG[i].name}» на 3 недели. Спорность региона: ${contestLabel(c)}.`);after()};
+A.recall=v=>{
+  const cp=S.camp,m=cp&&(cp.missions||[]).find(x=>x.pid===v);if(!m)return;
+  cp.missions=cp.missions.filter(x=>x!==m);closeModal();
+  toast(`${m.name} ${m.w?'возвращена':'возвращён'} из региона «${REG[m.reg].name}». Успели добиться: +${f1(m.got)}.`);after()};
+function missionWeek(){
+  const cp=S.camp;if(!cp.missions||!cp.missions.length)return;
+  for(const m of cp.missions){
+    const st=S.regions[m.reg],hot=contest(m.reg)>=55,g=m.power*(hot?1.3:1)*(1+fx('eff'));
+    st.effort.player+=g;st.und=Math.max(0,st.und-g*.25);m.got+=g;m.left--}
+  const done=cp.missions.filter(m=>m.left<=0);cp.missions=cp.missions.filter(m=>m.left>0);
+  for(const m of done){
+    news(`${m.name} завершил${m.w?'а':''} агитационную поездку по региону «${REG[m.reg].name}»`,'camp');
+    toast(`${m.name} ${m.w?'вернулась':'вернулся'} из региона «${REG[m.reg].name}»: за три недели +${f1(m.got)} к поддержке.`);
+    if(!S.queue.some(q=>q.id==='missiongaffe')&&Math.random()<.1+(m.amb-1)*.05-(m.comp-60)/600)S.queue.push({id:'missiongaffe',p:{name:m.name,w:m.w,reg:m.reg}})}}
+EV.missiongaffe={build(p){
+  const R=REG[p.reg],G=(a,b)=>p.w?b:a;
+  return{kicker:'Слухи',title:`${p.name} сорвал${G('ся','ась')} в регионе «${R.name}»`,text:`${esc(p.name)} ${G('допустил','допустила')} неосторожное высказывание на встрече с местными жителями. Запись ${G('его','её')} слов ходит по сети.`,choices:[
+   choice('Публично извиниться','Доверие −',()=>{const d=hurt(.8);S.regions[p.reg].effort.player-=.8;return `Вы извинились за ${G('него','неё')}. Доверие −${f1(d)}, в регионе −0,8.`}),
+   choice('Отрицать и защищать','Риск',()=>{if(Math.random()<.5){gain(.6);return 'Версия «вырвано из контекста» сработала. Доверие +0,6.'}const d=hurt(3);return `Видео оказалось полным и неприятным. Доверие −${f1(d)}.`}),
+   choice('Отстранить от поездок','Без последствий',()=>`${p.name} больше не ${G('поедет','поедет')} в регионы без согласования.`),
+  ]}}};
+
+/* ---------- люди в партии: список кандидатов и древо ---------- */
+function candRow(c,postId,i){
+  const f=buildProfile(c),last=f.career[f.career.length-1];
+  return `<div class="item cand"><div class="cand-ph">${portrait(c,'cand-img')}</div><div class="cand-b"><b>${esc(c.name)}</b><div class="muted" style="font-size:13px">${c.age} ${plural(c.age,'год','года','лет')} · от округа «${esc(f.home)}»</div><div class="muted" style="font-size:13px">${esc(last.t)}</div><div style="margin-top:4px">${personTags(c)}</div></div>
+  <div class="cand-act"><button class="btn mini" data-a="person" data-v="cand|${postId}|${i}">Профиль</button><button class="btn primary mini" data-a="appoint" data-v="${postId}|${i}">Назначить</button></div></div>`}
+A.post=v=>{
+  const pd=POST_BY[v];if(!pd||!unlocked(pd)||party().posts[v])return;
+  const list=candsFor(v);
+  modal(`<div class="mhead"><span class="kicker blue">Назначение</span><h2>${esc(pd.name)}</h2></div><div class="mbody"><p class="muted">${pd.d}</p>
+  <p class="muted" style="font-size:13px">Откройте профиль, чтобы прочитать биографию, сильные и слабые стороны. Решайте по людям, а не по цифрам.</p>
+  <div class="stack">${list.map((c,i)=>candRow(c,v,i)).join('')}</div><div class="mfoot"><button class="btn ghost" data-a="close">Закрыть</button></div></div>`)};
+A.appoint=v=>{
+  const [id,ix]=String(v).split('|'),pd=POST_BY[id],P=party();
+  if(!pd||P.posts[id]||!unlocked(pd))return;
+  const c=candsFor(id)[+ix];if(!c)return;
+  P.posts[id]=Object.assign({},c,{week:S.camp.week});P.cands[id]=null;P.loy=clamp(P.loy+loyGain(pd,c),0,100);
+  closeModal();
+  const a=anchor();burst(a.x,a.y-40,{emoji:'⭐',n:12});
+  toast(`Назначение: ${pd.name} — ${c.name}.`);after()};
+
+function partyScreen(){
+  const P=party(),L=P.loy,R=REG[S.sel];
+  const tier=L<25?['Раскол близко','down']:L<50?['Напряжённо','warn']:L<75?['Стабильно','flat']:['Монолит','up'];
+  const filled=Object.keys(P.posts).length;
+  const node=pd=>{
+    const m=P.posts[pd.id],open=unlocked(pd),kids=kidsOf(pd.id);
+    let body;
+    if(m){ensurePerson(m,pd.id);const mi=missionOf('post:'+pd.id);
+      body=`<span class="pt-av pt-ph">${portrait(m)}</span><div class="pt-body"><b>${esc(pd.name)}</b><small>${esc(m.name)}${m.defector?' · перебежчик':''}${mi?` · в регионе «${esc(REG[mi.reg].name)}»`:''}</small><small class="muted">${pd.d}</small></div>
+      <div class="pt-btns"><button class="btn mini" data-a="person" data-v="post|${pd.id}">Профиль</button><button class="btn mini" data-a="dismiss" data-v="${pd.id}">Снять</button></div>`}
+    else if(open)body=`<span class="pt-av empty">+</span><div class="pt-body"><b>${esc(pd.name)}</b><small class="muted">Вакантно. ${pd.d}</small></div><button class="btn mini primary" data-a="post" data-v="${pd.id}">Назначить</button>`;
+    else body=`<span class="pt-av empty">🔒</span><div class="pt-body"><b>${esc(pd.name)}</b><small class="muted">Нужен: ${esc(POST_BY[pd.parent].name)}</small></div>`;
+    const sub=kids.length?(m?`<ul>${kids.map(node).join('')}</ul>`:`<div class="pt-hint">Откроет ещё ${kids.length} ${plural(kids.length,'должность','должности','должностей')}</div>`):'';
+    return `<li class="pt-node ${m?'filled':open?'vacant':'locked'}"><div class="pt-card">${body}</div>${sub}</li>`};
+  const roots=PARTY_TREE.filter(p=>!p.parent);
+  const tree=`<ul class="ptree"><li class="pt-node filled root"><div class="pt-card"><span class="pt-av">${esc(ptInit(S.name||'Л'))}</span><div class="pt-body"><b>Лидер партии «${esc(S.party)}»</b><small>${esc(S.name||'')}</small></div></div><ul>${roots.map(node).join('')}</ul></li></ul>`;
+  const ms=(S.camp.missions||[]);
+  const missions=ms.length?ms.map(m=>`<div class="item row" style="justify-content:space-between;gap:10px;align-items:center"><div><b>${esc(m.name)}</b><div class="muted" style="font-size:13px">Регион «${esc(REG[m.reg].name)}» · ${contestLabel(contest(m.reg))} · осталось ${m.left} нед. · принесено +${f1(m.got)}</div></div><button class="btn mini" data-a="recall" data-v="${m.pid}">Отозвать</button></div>`).join('')
+    :'<p class="muted" style="font-size:13px">Откройте профиль назначенного человека или сотрудника штаба и отправьте его агитировать в спорный регион.</p>';
+  const rs=rivalsActive(),B=bribeState();
+  const chips=REG.map((r,i)=>`<button class="btn mini ${i===S.sel?'primary':''}" data-a="sel" data-v="${i}">${esc(r.name)}</button>`).join('');
+  const rivals=rs.map(c=>{const k=S.c[c];return `<div class="item"><div class="row" style="justify-content:space-between;gap:10px"><b style="color:${k.color}">${esc(k.name)}</b><span class="muted">${esc(k.party)}${k.dirt?` · <span class="up">компромат: ${k.dirt}</span>`:''}</span></div>
+   <div class="stack" style="margin-top:8px;gap:6px">${Object.entries(BRIBE).map(([t,op])=>`<button class="btn" style="text-align:left" data-a="bribeAsk" data-v="${c}|${t}"><b>${op.name}</b> · от ${money(rnd4(op.cost*.6))} · ${op.ap} ч · успех ~${Math.round(op.p*100)}%<br><small class="muted">${op.d}</small></button>`).join('')}</div></div>`}).join('');
+  return `<div class="loyalty card-in">
+    <div class="row" style="justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="eyebrow">Настроение партийной элиты</div><div style="margin-top:4px"><span class="chip ${tier[1]}" style="margin-left:0;font-size:14px">${tier[0]}</span></div></div>
+    <div class="muted" style="text-align:right;font-size:13px">Должностей занято: ${filled}/${PARTY_TREE.length}<br>Взносы элиты: +${money(partyFees(P))} · содержание аппарата: −${money(partyPay(P))} в неделю</div></div>
+    <div class="lbar"><i style="width:${clamp(L,0,100)}%"></i></div>
+    <p class="muted" style="font-size:13px;margin:8px 0">Кому доверить пост, решайте по профилю: биография, карьера и репутация расскажут больше любых цифр. Щедрые назначения успокаивают элиту, а обиженные уходят к соперникам.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+     <button class="btn" data-a="mobilize" ${L<10?'disabled':''}>🚩 Поднять аппарат · ${esc(R.name)}<small style="display:block" class="muted">−10% влияния в партии · 1 ч · +3…4 поддержки</small></button>
+     <button class="btn" data-a="shield" ${L<12?'disabled':''}>🛡 Закрыть вопросы связями<small style="display:block" class="muted">−12% влияния в партии · риск огласки −60%</small></button></div></div>
+  <div class="eyebrow" style="margin-top:16px">Древо должностей фракции</div>${tree}
+  <div class="eyebrow" style="margin-top:16px">Командировки в спорные регионы</div><div class="stack" style="gap:8px">${missions}</div>
+  <div class="eyebrow" style="margin-top:16px">Подкуп людей из окружения соперников</div>
+  <p class="muted" style="font-size:13px;margin:4px 0 8px">Выберите регион цели. Операции тайные, но риск огласки копится: сейчас он <b>${cashRiskLabel(B.heat)}</b>. Если дело всплывёт, пострадает доверие.</p>
+  <div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
+  <div class="grid3">${rivals||'<p class="muted">Нет активных соперников.</p>'}</div>`}
+
+/* ---------- платное лоббирование по инициативе игрока ---------- */
+const lobbyMult=()=>partyHas('lobby')?1.2:1;
+A.lobbyPitch=(v,btn,ev)=>{
+  const L=lobby(),g=LOBBY_BY[v],cp=S.camp;
+  if(!g||L.foes.includes(v)||L.offers.some(o=>o.gid===v))return;
+  const cd=(L.pitch&&L.pitch[v])||-9;if(cd>cp.week-3){toast(`${g.name} пока не готовы к разговору. Попробуйте через ${cd+3-cp.week} нед.`);return}
+  if(L.offers.length>=(partyHas('lobby')?5:4)){toast('Слишком много открытых предложений. Закройте или примите часть из них.');return}
+  if(!spend(1,0))return;
+  L.pitch=L.pitch||{};L.pitch[v]=cp.week;
+  const p=clamp(.5+(PL().rec-50)/200+(partyHas('lobby')?.12:0)-Math.max(0,L.side-20)/200+(g.kind==='people'?.15:0),.2,.9);
+  const a=anchor(btn,ev);
+  if(Math.random()<p){L.offers.push({gid:v,pay:rnd4(rnd(g.pay[0],g.pay[1])*.9),exp:cp.week+3,haggled:false});burst(a.x,a.y,{emoji:'🤝',n:8});toast(`${g.name} заинтересовались: готовы платить за «${g.want}». Условия во вкладке лоббистов.`)}
+  else toast(`${g.name} вежливо отказались: пока не готовы платить.`);
+  after()};
+
+function candsFor(id){
+  const P=party(),wk=S.camp?S.camp.week:0,c=P.cands[id];
+  if(c&&wk-c.week<6)return c.list;
+  const used=[],list=[];
+  for(let i=0;i<3;i++){const p=newPerson(id,used,{amb:i+1});used.push(p.port);list.push(p)}
+  P.cands[id]={week:wk,list};return list}
+
+/* ---------- главная страница и отдельный экран создания кандидата ---------- */
+A.goSetup=()=>{UIS='setup';render();scrollTo(0,0)};
+A.backMenu=()=>{UIS='menu';render();scrollTo(0,0)};
+A.quick=()=>{
+  const bio=pick(BIOS),w=Math.random()<.3,g=w?PN.w:PN.m,look=w?ri(5,9):ri(0,4);
+  Object.assign(SETUP,{name:pick(g.f)+' '+pick(g.l),bio:bio.id,age:ri(38,62),look,fem:w,photo:null,days:182,party:SETUP.party||'Новый курс'});
+  delete SETUP.stats;
+  newGame(SETUP);S.fem=w;S.c.player.fem=w;save();render();
+  const nm=S.name;setTimeout(()=>{if(S)toast(`Быстрый старт: ${nm}, ${bio.name.toLowerCase()}. Начните со штаба: наймите руководителя кампании и аналитика.`)},300)};
 
 /* ================= boot ================= */
 export function boot(){
@@ -2564,4 +2785,4 @@ export function boot(){
 }
 export { A, S as _S, loadSave, setupInner, esc, IMG, save, toast, modal, closeModal };
 export const getS=()=>S;
-export const __t={EV,COST,attemptWeek,LOBBY,TIER,lobby,threat,weeklyBudget,setSec,lobbyScreen,budgetCard,lobbyWeek,CR,POSTS,GENERALS,PREP,armyScreen,coupHTML,coupReady,coupChance,armyLoy,army,PARTY_TREE,REG,partyScreen,newGame,render,pump,nextWeek,SETUP,A,getS:()=>S,menuHTML,campaignHTML};
+export const __t={EV,COST,contest,buildProfile,profileHTML,personRef,staffPerson,newPerson,missionOf,candsFor,BIOS,STAFF_BY,STAFF,shares,getUIS:()=>UIS,attemptWeek,LOBBY,TIER,lobby,threat,weeklyBudget,setSec,lobbyScreen,budgetCard,lobbyWeek,CR,POSTS,GENERALS,PREP,armyScreen,coupHTML,coupReady,coupChance,armyLoy,army,PARTY_TREE,REG,partyScreen,newGame,render,pump,nextWeek,SETUP,A,getS:()=>S,menuHTML,campaignHTML};

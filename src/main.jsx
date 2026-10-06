@@ -3,6 +3,8 @@ import './styles.css';
 import './animations.css';
 import './party.css';
 import './army.css';
+import './menu.css';
+import './people.css';
 import './screens';          // registers migrated screens
 import App from './App.jsx';
 
